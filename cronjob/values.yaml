@@ -1,0 +1,97 @@
+app:
+  group: authing-next
+  name: null
+nameOverride: ""
+namespaceOverride: ""
+
+enabled: true
+
+commonAnnotations: {}
+podAnnotations: {}
+
+schedule: '24 00 30 12 *'
+
+command: []
+#  - /bin/bash
+#  - -c
+#  - node /usr/src/app/dist/syncUserToES/main.js
+
+image:
+  registry: registry.cn-beijing.aliyuncs.com/authing-next
+  tag: null
+  pullPolicy: IfNotPresent
+  imagePullSecrets:
+    - regsecret
+restartPolicy: Never
+extraEnvVars: []
+#  - name: test
+#    value: test
+
+envFrom: {}
+# - type: configMap
+#   name: nodejs-app-backup-conf
+
+resources: {}
+#  limits:
+#    memory: 1024Mi
+#    cpu: '400m'
+#  requests:
+#    memory: 512Mi
+#    cpu: '200m'
+
+hostAliases: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+podAffinityPreset: ""
+# soft || hard
+podAntiAffinityPreset: ""
+nodeAffinityPreset:
+  type: ""
+  key: ""
+  ## E.g.
+  ## values:
+  ##   - e2e-az1
+  ##   - e2e-az2
+  ##
+  values: []
+
+terminationGracePeriodSeconds: 30
+configMap: []
+#  - key: application.yaml
+#    path: /etc/authing/application.yaml
+#  - key: application-dev.yaml
+#    path: /etc/authing/application-dev.yaml
+
+timezone:
+  enabled: true
+
+persistence:
+  enabled: false
+  mountPath: /data
+  subPath: ""
+  storageClass: "gp2"
+  annotations: {}
+  accessModes:
+    - ReadWriteOnce
+  size: 8Gi
+  existingClaim: ""
+  selector: {}
+
+volumeMounts: []
+#  - name: log
+#    mountPath: /var/log
+
+volumes: []
+#  - name: log
+#    hostPath:
+#      path: /mnt/logs/
+#  - name: config
+#    configMap:
+#      name: config
+#      items:
+#        - key: app.yaml
+#          path: app.yaml

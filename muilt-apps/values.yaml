@@ -1,0 +1,161 @@
+app:
+  group: authing-next
+  name: null
+nameOverride: ""
+namespaceOverride: ""
+replicaCount: 1
+
+commonAnnotations: {}
+podAnnotations: {}
+
+image:
+  registry: registry.cn-beijing.aliyuncs.com/authing-next
+  tag: null
+  pullPolicy: IfNotPresent
+  imagePullSecrets:
+    - regsecret
+
+service:
+  - port: 3000
+    name: http
+#  - port: 8081
+#    name: https
+#    target: 8080
+
+ingress:
+  enabled: false
+  canary:
+    enabled: false
+  annotations:
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "off"
+    nginx.ingress.kubernetes.io/auth-tls-verify-depth: "1"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "64k"
+    nginx.ingress.kubernetes.io/proxy_buffers: "32 32k"
+    nginx.ingress.kubernetes.io/proxy_busy_buffers_size: "128k"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/auth-tls-pass-certificate-to-upstream: "true"
+
+  hostname: "nodejs-app-backup"
+  port: "http"
+  tls: true
+  secret: 'nodejs-app-backup'
+  path: /
+  extraRules: []
+#    - host: ""
+#      path: ""
+#      port: ""
+  extraTls: []
+#    - hosts:
+#        - test.com
+#      secretName: "nodejs-app-backup"
+
+extraEnvVars: []
+#  - name: test
+#    value: test
+
+envFrom: {}
+# - type: configMap
+#   name: nodejs-app-backup-conf
+
+healthCheck: {}
+#  type: tcp
+#  path: /
+#  initSecond: 120
+
+resources:
+  limits:
+    memory: 1024Mi
+    cpu: '400m'
+  requests:
+    memory: 512Mi
+    cpu: '200m'
+
+hostAliases: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+podAffinityPreset: ""
+# soft || hard
+podAntiAffinityPreset: ""
+nodeAffinityPreset:
+  type: ""
+  key: ""
+  ## E.g.
+  ## values:
+  ##   - e2e-az1
+  ##   - e2e-az2
+  ##
+  values: []
+
+lifecycleHooks:
+  enabled: false
+  postStart:
+    - /bin/sh
+    - -c
+    - yarn migration:run
+  preStop: []
+
+terminationGracePeriodSeconds: 30
+configMap: []
+#  - key: application.yaml
+#    path: /etc/authing/application.yaml
+#  - key: application-dev.yaml
+#    path: /etc/authing/application-dev.yaml
+
+timezone:
+  enabled: true
+
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+persistence:
+  enabled: false
+  mountPath: /data
+  subPath: ""
+  storageClass: "gp2"
+  annotations: {}
+  accessModes:
+    - ReadWriteOnce
+  size: 8Gi
+  existingClaim: ""
+  selector: {}
+
+volumeMounts: []
+#  - name: log
+#    mountPath: /var/log
+
+volumes: []
+#  - name: log
+#    hostPath:
+#      path: /mnt/logs/
+#  - name: config
+#    configMap:
+#      name: config
+#      items:
+#        - key: app.yaml
+#          path: app.yaml
+
+
+serviceMonitor:
+  enabled: false
+#  path: /metrics
+#  port: metrics
+  scrapeTimeout: 10s
+  interval: 30s
+  honorLabels: true
+  jobLabel:
+  metricRelabelings:
+    - action: labelmap
+      regex: __meta_kubernetes_service_label_(.+)
+
+cronjob:
+  enabled: false

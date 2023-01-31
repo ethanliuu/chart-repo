@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "common.names.name" .}}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+spec:
+  ports: {{- include "common.services.ports" (dict "list" .Values.service) | nindent 4}}
+  selector: {{- include "common.labels.matchLabels" . | nindent 4 }}

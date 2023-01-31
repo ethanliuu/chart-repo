@@ -1,0 +1,132 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "common.names.name" . }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  {{- if .Values.updateStrategy }}
+  strategy: {{- toYaml .Values.updateStrategy | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" . | nindent 8 }}
+      annotations: {{- include "common.template.annotations" . | nindent 8 }}
+      {{- if .Values.podAnnotations }}
+      {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.nodeSelector "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.affinity }}
+      affinity: {{- include "common.tplvalues.render" (dict "value" .Values.affinity "context" $) | nindent 8 }}
+      {{- else }}
+      affinity:
+        podAffinity: {{- include "common.affinities.pods" (dict "type" .Values.podAffinityPreset "context" $) | nindent 10 }}
+        podAntiAffinity: {{- include "common.affinities.pods" (dict "type" .Values.podAntiAffinityPreset "context" $) | nindent 10 }}
+        nodeAffinity: {{- include "common.affinities.nodes" (dict "type" .Values.nodeAffinityPreset.type "key" .Values.nodeAffinityPreset.key "values" .Values.nodeAffinityPreset.values) | nindent 10 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.tolerations "context" $) | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- if .Values.image.imagePullSecrets }}
+      {{- include "common.images.pullSecrets" (dict "list" .Values.image.imagePullSecrets) | nindent 6}}
+      {{- end}}
+      containers:
+        - name: {{ required "app.name is required" .Values.app.name }}
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.image  "app" .Values.app)}}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env: {{- include "common.containers.defaultEnv" . | nindent 12 }}
+          {{- if .Values.extraEnvVars }}
+          {{- include "common.containers.env" (dict "list" .Values.extraEnvVars ) | nindent 12 }}
+          {{- end }}
+          ports: {{- include "common.containers.ports" (dict "list" .Values.service) | nindent 12 }}
+          {{- if .Values.envFrom }}
+          envFrom: {{- include "common.containers.envFrom" (dict "list" .Values.envFrom "global" .) | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          {{- if .Values.timezone.enabled }}
+            - name: timezone
+              mountPath: /etc/localtime
+          {{- end }}
+          {{ if .Values.volumeMounts }}
+          {{- include "common.tplvalues.render" (dict "value" .Values.volumeMounts "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.configMap }}
+          {{- include "common.containers.configMap" (dict "config" .Values.configMap "global" .) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.healthCheck}}
+          livenessProbe:
+             {{- if eq .Values.healthCheck.type "http"}}
+            httpGet:
+              path: {{ .Values.healthCheck.path }}
+              port: {{ default (index .Values.service 0).port (index .Values.service 0).target }}
+            {{- else if eq .Values.healthCheck.type "tcp"}}
+            tcpSocket:
+              port: {{ default (index .Values.service 0).port (index .Values.service 0).target }}
+            {{- end }}
+            initialDelaySeconds: {{ default 120  .Values.healthCheck.initSecond }}
+            timeoutSeconds: 5
+            successThreshold: 1
+          readinessProbe:
+            {{- if eq .Values.healthCheck.type "http"}}
+            httpGet:
+              path: {{ .Values.healthCheck.path }}
+              port: {{ default (index .Values.service 0).port (index .Values.service 0).target }}
+            {{- else if eq .Values.healthCheck.type "tcp"}}
+            tcpSocket:
+              port: {{ default (index .Values.service 0).port (index .Values.service 0).target }}
+            {{- end }}
+            initialDelaySeconds: {{ default 120  .Values.healthCheck.initSecond }}
+            timeoutSeconds: 5
+            failureThreshold: 5
+            successThreshold: 1
+            {{- end }}
+          resources: {{- include "common.tplvalues.render" (dict "value" .Values.resources "context" $)| nindent 12 }}
+          {{- if .Values.lifecycleHooks.enabled }}
+          {{- if .Values.lifecycleHooks.postStart }}
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                {{- range .Values.lifecycleHooks.postStart }}
+                  - {{ . }}
+                {{- end }}
+            {{- end }}
+            {{- if .Values.lifecycleHooks.preStop }}
+            preStop:
+              exec:
+                command:
+                {{- range .Values.lifecycleHooks.preStop }}
+                  - {{ . }}
+                {{- end }}
+            {{- end }}
+          {{- end }}
+      {{- if .Values.hostAliases }}
+      hostAliases: {{- include "common.tplvalues.render" (dict "value" .Values.hostAliases "context" $)| nindent 8 }}
+      {{- end }}
+      volumes:
+      {{- if .Values.timezone.enabled }}
+        - name: timezone
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+      {{- end }}
+      {{- if .Values.volumes }}
+      {{- include "common.tplvalues.render" (dict "value" .Values.volumes "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.configMap }}
+      {{- include "common.volumes.configMap" (dict "config" .Values.configMap "global" .) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.persistence.enabled }}
+        - name: {{ include "common.names.name" . }}
+          persistentVolumeClaim:
+            claimName: {{ include "common.names.name" . }}
+      {{- end }}

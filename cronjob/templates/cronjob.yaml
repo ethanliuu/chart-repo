@@ -1,0 +1,76 @@
+{{- if .Values.enabled -}}
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: {{ include "common.names.name" . }}
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: {{ .Values.restartPolicy }}
+          {{- if .Values.nodeSelector }}
+          nodeSelector: {{- include "common.tplvalues.render" (dict "value" .Values.nodeSelector "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.affinity }}
+          affinity: {{- include "common.tplvalues.render" (dict "value" .Values.affinity "context" $) | nindent 12 }}
+          {{- else }}
+          affinity:
+            podAffinity: {{- include "common.affinities.pods" (dict "type" .Values.podAffinityPreset "context" $) | nindent 14 }}
+            podAntiAffinity: {{- include "common.affinities.pods" (dict "type" .Values.podAntiAffinityPreset "context" $) | nindent 14 }}
+            nodeAffinity: {{- include "common.affinities.nodes" (dict "type" .Values.nodeAffinityPreset.type "key" .Values.nodeAffinityPreset.key "global" .Values.nodeAffinityPreset.values) | nindent 14 }}
+          {{- end }}
+          {{- if .Values.tolerations }}
+          tolerations: {{- include "common.tplvalues.render" (dict "value" .Values.tolerations "context" $) | nindent 12 }}
+          {{- end }}
+          terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+          {{- if .Values.image.imagePullSecrets }}
+          {{- include "common.images.pullSecrets" (dict "list" .Values.image.imagePullSecrets) | nindent 10}}
+          {{- end }}
+          {{- if .Values.hostAliases }}
+          hostAliases: {{- include "common.tplvalues.render" (dict "value" .Values.hostAliases "context" $)| nindent 12 }}
+          {{- end }}
+          volumes:
+          {{- if .Values.timezone.enabled }}
+            - name: timezone
+              hostPath:
+                path: /usr/share/zoneinfo/Asia/Shanghai
+          {{- end }}
+          {{- if .Values.volumes }}
+          {{- include "common.tplvalues.render" (dict "value" .Values.volumes "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.configMap }}
+          {{- include "common.volumes.configMap" (dict "config" .Values.configMap "global" .) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.persistence.enabled }}
+            - name: {{ include "common.names.name" . }}
+              persistentVolumeClaim:
+                claimName: {{ include "common.names.name" . }}
+          {{- end }}
+          containers:
+          - name: {{ required "app.name is required" .Values.app.name }}
+            image: {{ include "common.images.image" (dict "imageRoot" .Values.image  "app" .Values.app)}}
+            imagePullPolicy: {{ .Values.image.pullPolicy }}
+            command:
+            {{- range .Values.command }}
+              - {{ . }}
+            {{- end }}
+            env: {{- include "common.containers.defaultEnv" . | nindent 12 }}
+          {{- if .Values.extraEnvVars }}
+          {{- include "common.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.envFrom }}
+            envFrom: {{- include "common.containers.envFrom" (dict "list" .Values.envFrom "global" .) | nindent 12 }}
+          {{- end }}
+            volumeMounts:
+          {{ if .Values.volumeMounts }}
+          {{- include "common.tplvalues.render" (dict "value" .Values.volumeMounts "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.configMap }}
+          {{- include "common.containers.configMap" (dict "config" .Values.configMap "global" .) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.resources }}
+            resources: {{- include "common.tplvalues.render" (dict "value" .Values.resources "context" $)| nindent 14 }}
+          {{- end }}
+{{- end -}}

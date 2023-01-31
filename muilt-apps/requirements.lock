@@ -1,0 +1,9 @@
+dependencies:
+- name: common
+  repository: https://docker-images.authing-inc.co/chartrepo/library
+  version: 1.0.14
+- name: cronjob
+  repository: https://docker-images.authing-inc.co/chartrepo/library
+  version: 0.0.1
+digest: sha256:68535112d1f3364a5f262ca514c1986e00bb4c3bd7d4a351c44dc430889c2c60
+generated: "2022-11-25T14:58:19.003426+08:00"
