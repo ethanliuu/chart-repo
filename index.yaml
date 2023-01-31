@@ -1,0 +1,13 @@
+apiVersion: v1
+entries:
+  muilts-apps:
+  - apiVersion: v1
+    appVersion: "1.1"
+    created: "2023-01-31T19:23:07.148175+08:00"
+    description: 多项目启动模板
+    digest: 9977f68301da7e8cd33c392ac5562c8352a635c0835f3a9761ad3ded65162dd7
+    name: muilts-apps
+    urls:
+    - https://github.com/ethanliuu/chart-repo/muilts-apps-1.1.0.tgz
+    version: 1.1.0
+generated: "2023-01-31T19:23:07.14669+08:00"
